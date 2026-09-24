@@ -1,8 +1,9 @@
 const PAGE_SIZE: usize = 4096; // 4kb
-// u32 = 4 bytes
-const PAGE_ID_OFFSET: usize = 0; // offset 0..4  page id
+// u32 = 4 bytes / 8 bit = 1 byte
+const PAGE_ID_OFFSET: usize = 0; // offset 0..4
 const KEY_COUNT_OFFSET: usize = 4; // offset 4..8  number of keys
-const ENTRIES_OFFSET: usize = 8;
+const ENTRIES_OFFSET: usize = 8; // page id & key count 0..8
+const ENTRIES_SIZE: usize = 8; // key(u32) + value(u32)
 
 struct Page {
     // id: u32, -> PAGE_ID_OFFSET
@@ -31,7 +32,7 @@ impl Page {
     }
 
     fn read_u32(&self, offset: usize) -> u32 {
-        // &[u8](length X) -> [u8; 4]
+        // &[u8](length unknown) -> [u8; 4]
         let bytes: [u8; 4] = self.data[offset..offset + 4].try_into().unwrap();
 
         u32::from_le_bytes(bytes)
@@ -47,6 +48,10 @@ impl Page {
 
     fn set_key_count(&mut self, count: u32) {
         self.write_u32(KEY_COUNT_OFFSET, count)
+    }
+
+    fn entry_offset(index: usize) -> usize {
+        ENTRIES_OFFSET + index * ENTRIES_SIZE
     }
 }
 
@@ -65,4 +70,7 @@ fn main() {
     println!("key count: {}", page.key_count());
     println!("key = {}", key);
     println!("value = {}", value);
+
+    println!("entry 0 offset = {}", Page::entry_offset(0));
+    println!("entry 1 offset = {}", Page::entry_offset(1));
 }

@@ -85,3 +85,20 @@ offset
 └───────────┴───────────┴─────────┴─────────┴─────────┴─────────┘
                         └──── entry 0 ──────┘└──── entry 1 ─────┘
 ```
+---
+### DAY 4 Key-Value Insert & Lookup
+**usize**
+
+same size as a pointer on the target architecture.
+(32bit-OS: 4kb 64bit-OS: 8kb)
+
+`let index = self.key_count() as usize;`
+
+**Option<T>**
+
+A value that may or may not exist.
+
+`fn get(&self, key: u32) -> Option<u32>`
+
+Some(0) → found, value = 0
+None    → not found

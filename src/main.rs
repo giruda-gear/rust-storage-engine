@@ -53,24 +53,57 @@ impl Page {
     fn entry_offset(index: usize) -> usize {
         ENTRIES_OFFSET + index * ENTRIES_SIZE
     }
+
+    fn write_entry(&mut self, index: usize, key: u32, value: u32) {
+        let offset = Self::entry_offset(index);
+
+        self.write_u32(offset, key);
+        self.write_u32(offset + 4, value);
+    }
+
+    fn read_entry(&self, index: usize) -> (u32, u32) {
+        let offset = Self::entry_offset(index);
+
+        let key = self.read_u32(offset);
+        let value = self.read_u32(offset + 4);
+
+        (key, value)
+    }
+
+    fn insert(&mut self, key: u32, value: u32) {
+        let index = self.key_count() as usize;
+
+        self.write_entry(index, key, value);
+        self.set_key_count(self.key_count() + 1);
+    }
+
+    fn get(&self, key: u32) -> Option<u32> {
+        let count = self.key_count() as usize;
+
+        for index in 0..count {
+            let (stored_key, stored_value) = self.read_entry(index);
+
+            if stored_key == key {
+                return Some(stored_value);
+            }
+        }
+
+        None
+    }
 }
 
 fn main() {
     let mut page = Page::new(42);
 
-    page.write_u32(ENTRIES_OFFSET, 10);
-    page.write_u32(ENTRIES_OFFSET + 4, 100);
+    page.insert(10, 100);
+    page.insert(20, 200);
 
-    page.set_key_count(1);
-
-    let key = page.read_u32(ENTRIES_OFFSET);
-    let value = page.read_u32(ENTRIES_OFFSET + 4);
+    let (key, value) = page.read_entry(0);
 
     println!("page id: {}", page.id());
     println!("key count: {}", page.key_count());
     println!("key = {}", key);
     println!("value = {}", value);
-
-    println!("entry 0 offset = {}", Page::entry_offset(0));
-    println!("entry 1 offset = {}", Page::entry_offset(1));
+    println!("{:?}", page.get(20));
+    println!("{:?}", page.get(100));
 }

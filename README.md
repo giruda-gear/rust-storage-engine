@@ -20,7 +20,7 @@ Raw storage
 data: [u8; 4096]
 ```
 ---
-### DAY 1 Integer ↔ Bytes
+### DAY 1 — Integer ↔ Bytes
 ```text
                   WRITE
 42u32
@@ -62,7 +62,7 @@ There is no `u32` on disk. There are only bytes interpreted according to the byt
 
 ---
 
-### DAY 2 PAGE HEADER
+### DAY 2 — PAGE HEADER
 ```text
 offset
  0             4            8            12           16
@@ -75,7 +75,7 @@ offset
     page ID      key count        key          value
 ```
 ---
-### DAY 3 Fixed-size Entries
+### DAY 3 — Fixed-size Entries
 ```text
 0           4           8                  16                 24
 │           │           │                   │                  │
@@ -86,7 +86,7 @@ offset
                         └──── entry 0 ──────┘└──── entry 1 ─────┘
 ```
 ---
-### DAY 4 Key-Value Insert & Lookup
+### DAY 4 — Key-Value Insert & Lookup
 **usize**
 
 same size as a pointer on the target architecture.
@@ -102,3 +102,16 @@ A value that may or may not exist.
 
 Some(0) → found, value = 0
 None    → not found
+
+---
+### DAY 5 — Sorted Entries & Binary Search
+`find_insert_position()` — find where a new key belongs
+
+`shift_right()` — move entries to make room
+
+`insert()` — insert in sorted order. overwrite the existing `(key,value)`
+
+`.rev()` — iterate in reverse order (1..3): 2->1
+
+Search sorted entries by repeatedly dividing the search range in half.\
+Time complexity: O(log n) instead of O(n).

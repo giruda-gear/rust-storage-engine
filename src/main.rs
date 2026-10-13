@@ -28,13 +28,11 @@ impl Page {
         // 42 = 0x0000002A
         let bytes = value.to_le_bytes(); // 2A 00 00 00 (little endian)
         self.data[offset..offset + 4].copy_from_slice(&bytes);
-        println!("data[{}] = {:?}", offset, &self.data[offset..offset + 4]);
     }
 
     fn read_u32(&self, offset: usize) -> u32 {
         // &[u8](length unknown) -> [u8; 4]
         let bytes: [u8; 4] = self.data[offset..offset + 4].try_into().unwrap();
-
         u32::from_le_bytes(bytes)
     }
 
@@ -70,40 +68,86 @@ impl Page {
         (key, value)
     }
 
-    fn insert(&mut self, key: u32, value: u32) {
-        let index = self.key_count() as usize;
-
-        self.write_entry(index, key, value);
-        self.set_key_count(self.key_count() + 1);
-    }
-
+    // binary search (array is already sorted.)
     fn get(&self, key: u32) -> Option<u32> {
-        let count = self.key_count() as usize;
+        let mut left = 0;
+        let mut right = self.key_count() as usize;
 
-        for index in 0..count {
-            let (stored_key, stored_value) = self.read_entry(index);
+        while left < right {
+            let mid = left + (right - left) / 2;
+            let (stored_key, stored_value) = self.read_entry(mid);
 
             if stored_key == key {
                 return Some(stored_value);
+            }
+
+            if stored_key < key {
+                left = mid + 1;
+            } else {
+                right = mid;
             }
         }
 
         None
     }
+
+    fn insert(&mut self, key: u32, value: u32) {
+        let count = self.key_count() as usize;
+        let position = self.find_insert_position(key);
+
+        if position < count {
+            let (stored_key, _) = self.read_entry(position);
+
+            if stored_key == key {
+                self.write_entry(position, key, value);
+                return;
+            }
+        }
+
+        self.shift_right(position);
+        self.write_entry(position, key, value);
+        self.set_key_count((count + 1) as u32);
+    }
+
+    fn find_insert_position(&self, key: u32) -> usize {
+        let count = self.key_count() as usize;
+
+        for index in 0..count {
+            let (stored_key, _) = self.read_entry(index);
+
+            if stored_key >= key {
+                return index;
+            }
+        }
+
+        count
+    }
+
+    fn shift_right(&mut self, start: usize) {
+        let count = self.key_count() as usize;
+
+        for index in (start..count).rev() {
+            let (key, value) = self.read_entry(index);
+
+            self.write_entry(index + 1, key, value);
+        }
+    }
 }
 
 fn main() {
-    let mut page = Page::new(42);
+    let mut page = Page::new(1);
 
-    page.insert(10, 100);
-    page.insert(20, 200);
+    page.insert(20, 100);
+    page.insert(10, 200);
+    page.insert(30, 300);
 
-    let (key, value) = page.read_entry(0);
+    page.insert(20, 299);
 
-    println!("page id: {}", page.id());
-    println!("key count: {}", page.key_count());
-    println!("key = {}", key);
-    println!("value = {}", value);
+    // page.shift_right(1);
+
+    for index in 0..page.key_count() as usize {
+        println!("{:?}", page.read_entry(index));
+    }
+
     println!("{:?}", page.get(20));
-    println!("{:?}", page.get(100));
 }

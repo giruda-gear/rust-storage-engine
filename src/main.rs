@@ -4,6 +4,7 @@ const PAGE_ID_OFFSET: usize = 0; // offset 0..4
 const KEY_COUNT_OFFSET: usize = 4; // offset 4..8  number of keys
 const ENTRIES_OFFSET: usize = 8; // page id & key count 0..8
 const ENTRIES_SIZE: usize = 8; // key(u32) + value(u32)
+const MAX_ENTRIES: usize = (PAGE_SIZE - ENTRIES_OFFSET) / ENTRIES_SIZE;
 
 struct Page {
     // id: u32, -> PAGE_ID_OFFSET
@@ -40,6 +41,10 @@ impl Page {
         self.read_u32(PAGE_ID_OFFSET)
     }
 
+    fn max_entries() -> usize {
+        MAX_ENTRIES
+    }
+
     fn key_count(&self) -> u32 {
         self.read_u32(KEY_COUNT_OFFSET)
     }
@@ -53,6 +58,11 @@ impl Page {
     }
 
     fn write_entry(&mut self, index: usize, key: u32, value: u32) {
+        assert!(
+            index < Self::max_entries(),
+            "Entry index exceeds page capacity"
+        );
+
         let offset = Self::entry_offset(index);
 
         self.write_u32(offset, key);
@@ -60,6 +70,11 @@ impl Page {
     }
 
     fn read_entry(&self, index: usize) -> (u32, u32) {
+        assert!(
+            index < self.key_count() as usize,
+            "Entry index out of range"
+        );
+
         let offset = Self::entry_offset(index);
 
         let key = self.read_u32(offset);
@@ -104,6 +119,10 @@ impl Page {
             }
         }
 
+        if self.key_count() as usize >= Self::max_entries() {
+            panic!("Page is full");
+        }
+
         self.shift_right(position);
         self.write_entry(position, key, value);
         self.set_key_count((count + 1) as u32);
@@ -137,17 +156,14 @@ impl Page {
 fn main() {
     let mut page = Page::new(1);
 
-    page.insert(20, 100);
-    page.insert(10, 200);
-    page.insert(30, 300);
-
-    page.insert(20, 299);
-
-    // page.shift_right(1);
-
-    for index in 0..page.key_count() as usize {
-        println!("{:?}", page.read_entry(index));
+    for i in 0..Page::max_entries() {
+        page.insert(i as u32, 1 * 100 as u32);
     }
 
-    println!("{:?}", page.get(20));
+    page.insert(10, 9999);
+    println!("Updated key 10: {:?}", page.get(10));
+    println!("Key count after update: {}", page.key_count());
+
+    // Test inserting a new key when full
+    page.insert(999, 9990);
 }

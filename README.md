@@ -115,3 +115,15 @@ None    → not found
 
 Search sorted entries by repeatedly dividing the search range in half.\
 Time complexity: O(log n) instead of O(n).
+
+### DAY 6 — Page Capacity
+**Maximum capacity**: (Page size[4096] - Header[8]) / 8 = 511 entries
+
+#### Capacity & Boundary Checks
+* Check page capacity before inserting a new key.
+* Update existing keys even when the page is full.
+* Validate entry indexes before reading or writing.
+
+`assert!()` — panics if the condition is false.
+
+`usize` — used for indexes and sizes.
